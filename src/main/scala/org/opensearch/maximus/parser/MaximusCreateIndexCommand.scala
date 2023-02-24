@@ -4,10 +4,11 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.execution.command.RunnableCommand
 
 case class MaximusCreateIndexCommand(
-    val indexProviderName: String)
+    indexProviderName: String)
   extends RunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    Seq()
+
+    Seq.empty
   }
 }

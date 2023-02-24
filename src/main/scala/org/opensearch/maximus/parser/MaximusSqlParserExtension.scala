@@ -11,6 +11,11 @@ class MaximusSqlParserExtension(
   val parser = new MaximusSqlParser
 
   override def parsePlan(sqlText: String): LogicalPlan = {
-    parser.parse(sqlText)
+    try {
+      parser.parse(sqlText)
+    } catch {
+      case e: Throwable =>
+        super.parsePlan(sqlText)
+    }
   }
 }
