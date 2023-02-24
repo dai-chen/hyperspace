@@ -3,17 +3,18 @@ package org.opensearch.maximus.parser
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical._
 import scala.language.implicitConversions
+import scala.util.matching.Regex
 import scala.util.parsing.combinator.PackratParsers
 import scala.util.parsing.combinator.lexical.StdLexical
 import scala.util.parsing.combinator.syntactical.StandardTokenParsers
 
 class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
 
-  protected val AS = keyword("AS")
-  protected val CREATE = keyword("CREATE")
-  protected val INDEX = keyword("INDEX")
-  protected val ON = keyword("ON")
-  protected val TABLE = keyword("TABLE")
+  protected val AS = maximusKeyword("AS")
+  protected val CREATE = maximusKeyword("CREATE")
+  protected val INDEX = maximusKeyword("INDEX")
+  protected val ON = maximusKeyword("ON")
+  protected val TABLE = maximusKeyword("TABLE")
 
   protected lazy val root: Parser[LogicalPlan] = ddlCommand
 
@@ -23,14 +24,27 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
     createIndex
 
   override val lexical = {
-    val sqlLex = new StdLexical()
+    val sqlLex = new StdLexical
     sqlLex
+  }
+
+  import lexical.Identifier
+
+  implicit def regexToParser(regex: Regex): Parser[String] = {
+    acceptMatch(
+      s"identifier matching regex ${ regex }",
+      { case Identifier(str) if regex.unapplySeq(str).isDefined => str }
+    )
+  }
+
+  def maximusKeyword(keys: String): Regex = {
+    ("(?i)" + keys).r
   }
 
   /**
    * CREATE INDEX index_name
    * ON TABLE [db_name.]table_name (column_name, ...)
-   * AS carbondata/bloomfilter/lucene
+   * AS bloomfilter/lucene
    */
   protected lazy val createIndex: Parser[LogicalPlan] =
     CREATE ~> INDEX ~ ident ~
