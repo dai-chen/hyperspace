@@ -5,7 +5,6 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.PackratParsers
-import scala.util.parsing.combinator.lexical.StdLexical
 import scala.util.parsing.combinator.syntactical.StandardTokenParsers
 
 class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
@@ -24,7 +23,8 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
     createIndex
 
   override val lexical = {
-    val sqlLex = new StdLexical
+    val sqlLex = new MaximusSqlLexical
+    // sqlLex.initialize(newReservedWords)
     sqlLex
   }
 
@@ -59,7 +59,7 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
   def parse(input: String): LogicalPlan = synchronized {
     phrase(root)(new lexical.Scanner(input)) match {
       case Success(plan, _) => plan
-      case failure => null // throw new AnalysisException(failure.toString)
+      case failure => throw new IllegalStateException(failure.toString)
     }
   }
 
