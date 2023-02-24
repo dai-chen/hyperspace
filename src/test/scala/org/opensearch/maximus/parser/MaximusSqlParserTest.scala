@@ -10,10 +10,12 @@ class MaximusSqlParserTest extends SparkFunSuite {
     val plan = maximusSqlParser.parse(
       """
         | CREATE INDEX alb_logs_client_ip_index
-        | ON alb_logs_table (client_ip)
+        | ON default.alb_logs_table (client_ip)
         | AS 'bloomfilter'
         |""".stripMargin)
 
-    assert(plan != null)
+    assert(plan == MaximusCreateIndexCommand(
+      Option("default"), "alb_logs_client_ip_index",
+      "alb_logs_table", Seq("client_ip"), "bloomfilter"))
   }
 }

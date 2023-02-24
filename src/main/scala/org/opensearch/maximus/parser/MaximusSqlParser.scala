@@ -47,13 +47,15 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
    * AS bloomfilter/lucene
    */
   protected lazy val createIndex: Parser[LogicalPlan] =
-    CREATE ~> INDEX ~ ident ~
+    CREATE ~> INDEX ~> ident ~
       ontable ~
       ("(" ~> repsep(ident, ",") <~ ")") ~
       (AS ~> stringLit) <~ opt(";") ^^ {
         case indexName ~ table ~ cols ~ indexProvider =>
+          val dbName = table.database
+          val tableName = table.table.toLowerCase()
           val tableCols = cols.map(f => f.toLowerCase())
-          MaximusCreateIndexCommand(indexProvider)
+          MaximusCreateIndexCommand(dbName, indexName, tableName, tableCols, indexProvider)
     }
 
   def parse(input: String): LogicalPlan = synchronized {

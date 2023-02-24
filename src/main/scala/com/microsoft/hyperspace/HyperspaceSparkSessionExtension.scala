@@ -64,7 +64,7 @@ class HyperspaceSparkSessionExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
     extensions.injectParser(
       (sparkSession: SparkSession, parser: ParserInterface) =>
-        new MaximusSqlParserExtension(new SQLConf))
+        new MaximusSqlParserExtension(new SQLConf, sparkSession))
 
     extensions.injectOptimizerRule { sparkSession =>
       // Enable Hyperspace to leverage indexes.
