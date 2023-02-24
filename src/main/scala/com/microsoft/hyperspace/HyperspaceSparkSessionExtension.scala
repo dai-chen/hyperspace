@@ -17,8 +17,11 @@
 package com.microsoft.hyperspace
 
 import org.apache.spark.sql.{SparkSession, SparkSessionExtensions}
+import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.internal.SQLConf
+import org.opensearch.maximus.parser.MaximusSqlParserExtension
 
 import com.microsoft.hyperspace.index.execution.BucketUnionStrategy
 import com.microsoft.hyperspace.index.rules.ApplyHyperspace
@@ -59,6 +62,10 @@ class HyperspaceSparkSessionExtension extends (SparkSessionExtensions => Unit) {
   }
 
   override def apply(extensions: SparkSessionExtensions): Unit = {
+    extensions.injectParser(
+      (sparkSession: SparkSession, parser: ParserInterface) =>
+        new MaximusSqlParserExtension(new SQLConf))
+
     extensions.injectOptimizerRule { sparkSession =>
       // Enable Hyperspace to leverage indexes.
       sparkSession.addOptimizationsIfNeeded()
