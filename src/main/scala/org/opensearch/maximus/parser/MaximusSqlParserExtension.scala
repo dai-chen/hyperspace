@@ -8,7 +8,7 @@ import org.apache.spark.sql.internal.SQLConf
 class MaximusSqlParserExtension(
     conf: SQLConf,
     sparkSession: SparkSession)
-  extends SparkSqlParser(conf) {
+  extends SparkSqlParser {
 
   val parser = new MaximusSqlParser
 
