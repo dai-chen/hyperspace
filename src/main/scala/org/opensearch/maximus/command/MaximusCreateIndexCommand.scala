@@ -17,7 +17,7 @@ case class MaximusCreateIndexCommand(
   extends RunnableCommand with Logging {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    log.info(s"Create index $indexName for table $tableName on columns $columnNames")
+    log.info(s"Creating index $indexName for table $tableName on columns $columnNames")
 
     val hyperspace = new Hyperspace(sparkSession)
     val table = sparkSession.sqlContext.table(tableName)
