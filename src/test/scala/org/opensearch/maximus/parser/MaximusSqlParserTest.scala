@@ -1,6 +1,7 @@
 package org.opensearch.maximus.parser
 
 import org.apache.spark.SparkFunSuite
+import org.opensearch.maximus.command.MaximusCreateIndexCommand
 
 class MaximusSqlParserTest extends SparkFunSuite {
 

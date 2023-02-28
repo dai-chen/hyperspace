@@ -2,6 +2,7 @@ package org.opensearch.maximus.parser
 
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.opensearch.maximus.command.{MaximusCreateIndexCommand, MaximusShowIndexesCommand}
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.PackratParsers
@@ -12,7 +13,9 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
   protected val AS = maximusKeyword("AS")
   protected val CREATE = maximusKeyword("CREATE")
   protected val INDEX = maximusKeyword("INDEX")
+  protected val INDEXES = maximusKeyword("INDEXES")
   protected val ON = maximusKeyword("ON")
+  protected val SHOW = maximusKeyword("SHOW")
   protected val TABLE = maximusKeyword("TABLE")
 
   protected lazy val root: Parser[LogicalPlan] = ddlCommand
@@ -20,7 +23,7 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
   protected lazy val ddlCommand: Parser[LogicalPlan] = indexCommands
 
   protected lazy val indexCommands: Parser[LogicalPlan] =
-    createIndex
+    createIndex | showIndexes
 
   override val lexical = {
     val sqlLex = new MaximusSqlLexical
@@ -56,6 +59,12 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
           val tableName = table.table.toLowerCase()
           val tableCols = cols.map(f => f.toLowerCase())
           MaximusCreateIndexCommand(dbName, indexName, tableName, tableCols, indexProvider)
+    }
+
+  protected lazy val showIndexes: Parser[LogicalPlan] =
+    SHOW ~> INDEXES ~> ontable <~ opt(";") ^^ {
+      case table =>
+        MaximusShowIndexesCommand(table.database, table.table)
     }
 
   def parse(input: String): LogicalPlan = synchronized {

@@ -1,4 +1,4 @@
-package org.opensearch.maximus.parser
+package org.opensearch.maximus.command
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{Row, SparkSession}
