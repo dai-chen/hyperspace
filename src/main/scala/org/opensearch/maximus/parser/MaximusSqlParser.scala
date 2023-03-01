@@ -16,6 +16,7 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
   protected val INDEX = maximusKeyword("INDEX")
   protected val INDEXES = maximusKeyword("INDEXES")
   protected val ON = maximusKeyword("ON")
+  protected val REFRESH = maximusKeyword("REFRESH")
   protected val SHOW = maximusKeyword("SHOW")
   protected val TABLE = maximusKeyword("TABLE")
 
@@ -24,7 +25,7 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
   protected lazy val ddlCommand: Parser[LogicalPlan] = indexCommands
 
   protected lazy val indexCommands: Parser[LogicalPlan] =
-    createIndex | dropIndex | showIndexes
+    createIndex | refreshIndex | dropIndex | showIndexes
 
   override val lexical = {
     val sqlLex = new MaximusSqlLexical
@@ -60,6 +61,17 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
           val tableName = table.table.toLowerCase()
           val tableCols = cols.map(f => f.toLowerCase())
           MaximusCreateIndexCommand(dbName, indexName, tableName, tableCols, indexProvider)
+    }
+
+  /**
+   * REFRESH INDEX index_name
+   * ON [db_name.]table_name
+   */
+  protected lazy val refreshIndex: Parser[LogicalPlan] =
+    REFRESH ~> INDEX ~>  ident ~
+      ontable <~ opt(";") ^^ {
+      case indexName ~ parentTable =>
+        MaximusRefreshIndexCommand(indexName.toLowerCase(), parentTable)
     }
 
   protected lazy val showIndexes: Parser[LogicalPlan] =
