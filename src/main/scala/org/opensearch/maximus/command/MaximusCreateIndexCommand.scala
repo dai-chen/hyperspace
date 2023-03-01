@@ -5,6 +5,7 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.execution.command.RunnableCommand
 
 import com.microsoft.hyperspace.Hyperspace
+import com.microsoft.hyperspace.index.IndexConfig
 import com.microsoft.hyperspace.index.dataskipping.DataSkippingIndexConfig
 import com.microsoft.hyperspace.index.dataskipping.sketches.BloomFilterSketch
 
@@ -21,8 +22,17 @@ case class MaximusCreateIndexCommand(
 
     val hyperspace = new Hyperspace(sparkSession)
     val table = sparkSession.sqlContext.table(tableName)
-    val indexConfig = DataSkippingIndexConfig(indexName,
-      BloomFilterSketch(columnNames.head, 0.01, 10))
+
+    val indexConfig = indexProviderName match {
+      case "bloomfilter" =>
+        DataSkippingIndexConfig(indexName,
+          BloomFilterSketch(columnNames.head, 0.01, 10))
+      case "lucene" =>
+        IndexConfig(indexName, columnNames, Seq()) // TODO: pass included columns
+      case _ =>
+        throw new IllegalArgumentException(s"Unsupported index provider $indexProviderName")
+    }
+
     hyperspace.createIndex(table, indexConfig)
     Seq.empty
   }

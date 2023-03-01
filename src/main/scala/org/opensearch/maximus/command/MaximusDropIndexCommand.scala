@@ -10,7 +10,7 @@ case class MaximusDropIndexCommand(indexName: String)
   extends RunnableCommand with Logging {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    log.info(s"Droping index $indexName")
+    log.info(s"Dropping index $indexName")
 
     val hyperspace = new Hyperspace(sparkSession)
     hyperspace.deleteIndex(indexName)
