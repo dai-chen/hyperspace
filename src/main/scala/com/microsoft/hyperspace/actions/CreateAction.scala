@@ -29,7 +29,7 @@ import com.microsoft.hyperspace.util.{HyperspaceConf, ResolverUtils}
 class CreateAction(
     override val spark: SparkSession,
     df: DataFrame,
-    indexConfig: IndexConfigTrait,
+    override val indexConfig: IndexConfigTrait,
     final override protected val logManager: IndexLogManager,
     dataManager: IndexDataManager)
     extends CreateActionBase(dataManager)

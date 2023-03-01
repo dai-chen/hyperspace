@@ -40,4 +40,9 @@ trait IndexerContext {
    * Returns the data path of the index this context is associated with.
    */
   def indexDataPath: Path
+
+  /**
+   * Returns index configuration.
+   */
+  def indexConfig: IndexConfigTrait = null
 }

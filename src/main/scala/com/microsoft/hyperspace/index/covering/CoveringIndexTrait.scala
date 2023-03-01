@@ -21,6 +21,7 @@ import org.apache.spark.sql.catalyst.catalog.BucketSpec
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.hyperspace.utils.StructTypeUtils
 import org.apache.spark.sql.types.StructType
+import org.opensearch.spark.sql._
 
 import com.microsoft.hyperspace.index._
 import com.microsoft.hyperspace.util.ResolverUtils.ResolvedColumn
@@ -43,7 +44,8 @@ trait CoveringIndexTrait extends Index {
 
   // override functions for Index
   override def write(ctx: IndexerContext, indexData: DataFrame): Unit = {
-    write(ctx, indexData, SaveMode.Overwrite)
+    indexData.saveToOpenSearch(ctx.indexConfig.indexName)
+    // write(ctx, indexData, SaveMode.Overwrite)
   }
 
   override def referencedColumns: Seq[String] = indexedColumns ++ includedColumns
