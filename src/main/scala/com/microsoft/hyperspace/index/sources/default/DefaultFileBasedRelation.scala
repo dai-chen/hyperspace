@@ -22,6 +22,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 import org.apache.spark.sql.execution.datasources._
+import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.sources.DataSourceRegister
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.hyperspace.Utils
@@ -116,6 +117,12 @@ class DefaultFileBasedRelation(spark: SparkSession, override val plan: LogicalRe
    */
   override def createLogicalRelation(
       hadoopFsRelation: HadoopFsRelation,
+      newOutput: Seq[AttributeReference]): LogicalRelation = {
+    plan.copy(relation = hadoopFsRelation, output = newOutput)
+  }
+
+  override def createLogicalRelation(
+      hadoopFsRelation: BaseRelation,
       newOutput: Seq[AttributeReference]): LogicalRelation = {
     plan.copy(relation = hadoopFsRelation, output = newOutput)
   }

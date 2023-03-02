@@ -26,6 +26,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.functions.input_file_name
 import org.apache.spark.sql.hyperspace.utils.StructTypeUtils
 import org.apache.spark.sql.types.StructType
+import org.opensearch.spark.sql._
 
 import com.microsoft.hyperspace.index._
 import com.microsoft.hyperspace.index.dataskipping.expressions._
@@ -191,6 +192,10 @@ case class DataSkippingIndex(
       indexData.schema.sameType(schema),
       "Schema of the index data doesn't match the index schema: " +
         s"index data schema = ${indexData.schema.toDDL}, index schema = ${schema.toDDL}")
+
+    indexData.saveToOpenSearch(ctx.indexConfig.indexName)
+
+    /*
     indexData.cache()
     indexData.count() // force cache
     val indexDataSize = DataFrameUtils.getSizeInBytes(indexData)
@@ -203,6 +208,7 @@ case class DataSkippingIndex(
     val repartitionedIndexData = indexData.repartition(numFiles)
     repartitionedIndexData.write.mode(writeMode).parquet(ctx.indexDataPath.toString)
     indexData.unpersist()
+    */
   }
 
   /**

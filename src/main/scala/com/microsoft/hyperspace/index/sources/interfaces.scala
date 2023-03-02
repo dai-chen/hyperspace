@@ -21,6 +21,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.{FileIndex, HadoopFsRelation, LogicalRelation}
+import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.types.StructType
 
 import com.microsoft.hyperspace.index.{FileIdTracker, FileInfo, IndexConstants, IndexLogEntry, Relation}
@@ -128,6 +129,12 @@ trait FileBasedRelation extends SourceRelation {
   def createLogicalRelation(
       hadoopFsRelation: HadoopFsRelation,
       newOutput: Seq[AttributeReference]): LogicalRelation
+
+  def createLogicalRelation(
+      hadoopFsRelation: BaseRelation,
+      newOutput: Seq[AttributeReference]): LogicalRelation = {
+    throw new UnsupportedOperationException
+  }
 
   // TODO: APIs defined are below are related to index maintenance.
   //   This can be moved out to a separate trait.
