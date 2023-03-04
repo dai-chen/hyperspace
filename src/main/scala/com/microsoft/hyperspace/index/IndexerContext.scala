@@ -42,7 +42,7 @@ trait IndexerContext {
   def indexDataPath: Path
 
   /**
-   * Returns index configuration.
+   * Returns index name.
    */
-  def indexConfig: IndexConfigTrait = null
+  def indexName: String = null
 }

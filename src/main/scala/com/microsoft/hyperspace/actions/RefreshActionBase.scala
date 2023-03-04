@@ -79,6 +79,9 @@ private[actions] abstract class RefreshActionBase(
 
   final override val finalState: String = ACTIVE
 
+
+  override def indexName: String = previousIndexLogEntry.name
+
   override def validate(): Unit = {
     if (!previousIndexLogEntry.state.equalsIgnoreCase(ACTIVE)) {
       throw HyperspaceException(

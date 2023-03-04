@@ -29,7 +29,7 @@ import com.microsoft.hyperspace.util.{HyperspaceConf, ResolverUtils}
 class CreateAction(
     override val spark: SparkSession,
     df: DataFrame,
-    override val indexConfig: IndexConfigTrait,
+    indexConfig: IndexConfigTrait,
     final override protected val logManager: IndexLogManager,
     dataManager: IndexDataManager)
     extends CreateActionBase(dataManager)
@@ -46,6 +46,8 @@ class CreateAction(
   final override val transientState: String = CREATING
 
   final override val finalState: String = ACTIVE
+
+  final override def indexName: String = indexConfig.indexName
 
   final override def validate(): Unit = {
     // We currently only support createIndex() over HDFS file based scan nodes.

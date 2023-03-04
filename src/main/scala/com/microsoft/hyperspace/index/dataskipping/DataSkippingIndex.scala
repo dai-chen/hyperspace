@@ -193,7 +193,7 @@ case class DataSkippingIndex(
       "Schema of the index data doesn't match the index schema: " +
         s"index data schema = ${indexData.schema.toDDL}, index schema = ${schema.toDDL}")
 
-    indexData.saveToOpenSearch(ctx.indexConfig.indexName)
+    indexData.saveToOpenSearch(ctx.indexName)
 
     /*
     indexData.cache()

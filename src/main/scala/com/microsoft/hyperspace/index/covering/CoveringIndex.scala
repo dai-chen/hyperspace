@@ -55,7 +55,7 @@ case class CoveringIndex(
   }
 
   override protected def write(ctx: IndexerContext, indexData: DataFrame, mode: SaveMode): Unit = {
-    indexData.saveToOpenSearch(ctx.indexConfig.indexName)
+    indexData.saveToOpenSearch(ctx.indexName)
 
     /*
     // Run job
