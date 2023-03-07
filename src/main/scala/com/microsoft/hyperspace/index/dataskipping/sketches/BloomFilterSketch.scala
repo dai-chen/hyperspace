@@ -52,7 +52,8 @@ case class BloomFilterSketch(
     extends SingleExprSketch[BloomFilterSketch](expr, dataType) {
   override def name: String = "BloomFilter"
 
-  override def toString: String = s"$name($expr, $fpp, $expectedDistinctCountPerFile)"
+  override def toString: String = s"$name($expr, $expectedDistinctCountPerFile)"
+    // OS-Hadoop doesn't support field name with dots
 
   override def withNewExpression(newExpr: (String, Option[DataType])): BloomFilterSketch = {
     copy(expr = newExpr._1, dataType = newExpr._2)

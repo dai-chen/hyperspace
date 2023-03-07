@@ -18,7 +18,8 @@ package com.microsoft.hyperspace.index.dataskipping.expressions
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.util.ArrayData
-import org.apache.spark.sql.types.{ArrayType, IntegerType, LongType, StructField, StructType}
+import org.apache.spark.sql.types.{ArrayType, IntegerType, LongType, StringType, StructField, StructType}
+import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.sketch.BloomFilter
 
 import com.microsoft.hyperspace.index.dataskipping.util.ReflectionHelper
@@ -28,33 +29,37 @@ import com.microsoft.hyperspace.index.dataskipping.util.ReflectionHelper
  */
 object FastBloomFilterEncoder extends BloomFilterEncoder with ReflectionHelper {
   override val dataType: StructType = StructType(
-    StructField("numHashFunctions", IntegerType, nullable = false) ::
       StructField("bitCount", LongType, nullable = false) ::
-      StructField("data", ArrayType(LongType, containsNull = false), nullable = false) :: Nil)
+      StructField("data", StringType, nullable = false) ::
+      StructField("numHashFunctions", LongType, nullable = false) :: Nil)
+    // Must be consistent with read/write below (in other words,
+    // consistent with physical layout of object field in OpenSearch)
 
   override def encode(bf: BloomFilter): InternalRow = {
     val bloomFilterImplClass = bf.getClass
     val bits = get(bloomFilterImplClass, "bits", bf)
     val bitArrayClass = bits.getClass
     InternalRow(
-      getInt(bloomFilterImplClass, "numHashFunctions", bf),
       getLong(bitArrayClass, "bitCount", bits),
-      ArrayData.toArrayData(get(bitArrayClass, "data", bits).asInstanceOf[Array[Long]]))
+      UTF8String.fromString(
+        ArrayData.toArrayData(get(bitArrayClass, "data", bits))
+          .toLongArray().mkString(",")),
+      getLong(bloomFilterImplClass, "numHashFunctions", bf))
   }
 
   override def decode(value: Any): BloomFilter = {
     val struct = value.asInstanceOf[InternalRow]
-    val numHashFunctions = struct.getInt(0)
-    val bitCount = struct.getLong(1)
-    val data = struct.getArray(2).toLongArray()
+    val bitCount = struct.getLong(0)
+    val data = struct.getString(1).split(',').map(_.toLong)
+    val numHashFunctions = struct.getLong(2)
 
     val bf = BloomFilter.create(1)
     val bloomFilterImplClass = bf.getClass
     val bits = get(bloomFilterImplClass, "bits", bf)
     val bitArrayClass = bits.getClass
-    setInt(bloomFilterImplClass, "numHashFunctions", bf, numHashFunctions)
     setLong(bitArrayClass, "bitCount", bits, bitCount)
     set(bitArrayClass, "data", bits, data)
+    setInt(bloomFilterImplClass, "numHashFunctions", bf, numHashFunctions.toInt)
     bf
   }
 }

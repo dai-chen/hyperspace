@@ -22,6 +22,7 @@ import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
 import org.apache.spark.sql.hyperspace.utils.logicalPlanToDataFrame
 import org.apache.spark.sql.types.StructType
+import org.opensearch.spark.sql.DefaultSource15
 
 import com.microsoft.hyperspace.index.{IndexLogEntry, IndexLogEntryTags}
 import com.microsoft.hyperspace.index.dataskipping.DataSkippingIndex
@@ -84,6 +85,7 @@ object ApplyDataSkippingIndex extends HyperspaceRule {
 
   private def getIndexDataRelation(indexLogEntry: IndexLogEntry): LogicalRelation = {
     val indexDataSchema = indexLogEntry.derivedDataset.asInstanceOf[DataSkippingIndex].schema
+    /*
     val indexDataLoc =
       indexLogEntry.withCachedTag(IndexLogEntryTags.DATASKIPPING_INDEX_FILEINDEX) {
         new InMemoryFileIndex(
@@ -93,6 +95,7 @@ object ApplyDataSkippingIndex extends HyperspaceRule {
           Some(indexDataSchema),
           FileStatusCache.getOrCreate(spark))
       }
+
     LogicalRelation(
       HadoopFsRelation(
         indexDataLoc,
@@ -101,5 +104,11 @@ object ApplyDataSkippingIndex extends HyperspaceRule {
         None,
         new ParquetFileFormat,
         Map.empty)(spark))
+    */
+
+    val ds = new DefaultSource15()
+    val opt = Map("opensearch.resource" -> indexLogEntry.name)
+    val indexFsRelation = ds.createRelation(spark.sqlContext, opt, indexDataSchema)
+    LogicalRelation(indexFsRelation)
   }
 }
