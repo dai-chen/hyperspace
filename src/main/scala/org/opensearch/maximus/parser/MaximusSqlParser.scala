@@ -3,6 +3,7 @@ package org.opensearch.maximus.parser
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.opensearch.maximus.command._
+import org.opensearch.maximus.command.mv._
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.PackratParsers
@@ -15,17 +16,24 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
   protected val DROP = maximusKeyword("DROP")
   protected val INDEX = maximusKeyword("INDEX")
   protected val INDEXES = maximusKeyword("INDEXES")
+  protected val MATERIALIZED = maximusKeyword("MATERIALIZED")
   protected val ON = maximusKeyword("ON")
   protected val REFRESH = maximusKeyword("REFRESH")
   protected val SHOW = maximusKeyword("SHOW")
   protected val TABLE = maximusKeyword("TABLE")
+  protected val VIEW = maximusKeyword("VIEW")
+  protected val VIEWS = maximusKeyword("VIEWS")
 
   protected lazy val root: Parser[LogicalPlan] = ddlCommand
 
-  protected lazy val ddlCommand: Parser[LogicalPlan] = indexCommands
+  protected lazy val ddlCommand: Parser[LogicalPlan] =
+    indexCommands | mvCommands
 
   protected lazy val indexCommands: Parser[LogicalPlan] =
     createIndex | refreshIndex | dropIndex | showIndexes
+
+  protected lazy val mvCommands: Parser[LogicalPlan] =
+    createMV;
 
   override val lexical = {
     val sqlLex = new MaximusSqlLexical
@@ -46,6 +54,7 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
     ("(?i)" + keys).r
   }
 
+  // For index
   /**
    * CREATE INDEX index_name
    * ON TABLE [db_name.]table_name (column_name, ...)
@@ -68,7 +77,7 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
    * ON [db_name.]table_name
    */
   protected lazy val refreshIndex: Parser[LogicalPlan] =
-    REFRESH ~> INDEX ~>  ident ~
+    REFRESH ~> INDEX ~> ident ~
       ontable <~ opt(";") ^^ {
       case indexName ~ parentTable =>
         MaximusRefreshIndexCommand(indexName.toLowerCase(), parentTable)
@@ -86,6 +95,26 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
       case indexName ~ table =>
         MaximusDropIndexCommand(indexName.toLowerCase())
     }
+
+  // For materialized view
+  /**
+   * CREATE MATERIALIZED VIEW mv_name
+   * AS mv_query_statement
+   */
+  private lazy val createMV: Parser[LogicalPlan] =
+    CREATE ~> MATERIALIZED ~> VIEW ~> (ident <~ ".").? ~ ident ~
+      AS ~ query <~ opt(";") ^^ {
+      case dbName ~ mvName ~ _ ~ query =>
+        MaximusCreateMVCommand(dbName, mvName, query)
+    }
+
+  // Returns the rest of the input string that are not parsed yet
+  private lazy val query: Parser[String] = new Parser[String] {
+    def apply(in: Input): ParseResult[String] =
+      Success(
+        in.source.subSequence(in.offset, in.source.length()).toString,
+        in.drop(in.source.length()))
+  }
 
   def parse(input: String): LogicalPlan = synchronized {
     phrase(root)(new lexical.Scanner(input)) match {
