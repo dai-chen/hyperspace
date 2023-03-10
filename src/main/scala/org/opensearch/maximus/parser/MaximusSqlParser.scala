@@ -33,7 +33,7 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
     createIndex | refreshIndex | dropIndex | showIndexes
 
   protected lazy val mvCommands: Parser[LogicalPlan] =
-    createMV;
+    createMV
 
   override val lexical = {
     val sqlLex = new MaximusSqlLexical

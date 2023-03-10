@@ -31,6 +31,10 @@ package object utils {
     Dataset.ofRows(spark, logicalPlan)
   }
 
+  def dataFrameToLogicalPlan(df: DataFrame): LogicalPlan = {
+    df.logicalPlan
+  }
+
   implicit class StructTypeUtils(st: StructType) {
     // Expose package-private method
     def merge(that: StructType): StructType = st.merge(that)
