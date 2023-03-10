@@ -21,6 +21,7 @@ import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.internal.SQLConf
+import org.opensearch.maximus.function.TumbleUDF
 import org.opensearch.maximus.parser.MaximusSqlParserExtension
 
 import com.microsoft.hyperspace.index.execution.BucketUnionStrategy
@@ -61,12 +62,15 @@ class HyperspaceSparkSessionExtension extends (SparkSessionExtensions => Unit) {
     }
   }
 
+
   override def apply(extensions: SparkSessionExtensions): Unit = {
     extensions.injectParser(
       (sparkSession: SparkSession, parser: ParserInterface) =>
         new MaximusSqlParserExtension(new SQLConf, sparkSession))
 
     extensions.injectOptimizerRule { sparkSession =>
+      sparkSession.udf.register(TumbleUDF.name, TumbleUDF.tumble _) // TODO: register here for now
+
       // Enable Hyperspace to leverage indexes.
       sparkSession.addOptimizationsIfNeeded()
       // Return a dummy rule to fit in interface of injectOptimizerRule
