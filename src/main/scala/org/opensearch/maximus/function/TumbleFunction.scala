@@ -7,7 +7,7 @@ import org.apache.spark.sql.functions.window
 
 object TumbleFunction {
 
-  val identifier: FunctionIdentifier = FunctionIdentifier("tumble2")
+  val identifier: FunctionIdentifier = FunctionIdentifier("tumble")
 
   val exprInfo: ExpressionInfo = new ExpressionInfo(classOf[Column].getCanonicalName, "window")
 
