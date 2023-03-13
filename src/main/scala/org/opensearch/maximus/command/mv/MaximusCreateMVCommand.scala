@@ -1,18 +1,15 @@
 package org.opensearch.maximus.command.mv
 
-import java.util
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.{
-  Attribute, AttributeReference, Expression, ExprId, NamedExpression
-}
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedFunction, UnresolvedRelation}
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.catalyst.util.IntervalUtils
 import org.apache.spark.sql.execution.command.RunnableCommand
-import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.execution.streaming.StreamingRelation
-import org.apache.spark.sql.hyperspace.utils.{dataFrameToLogicalPlan, logicalPlanToDataFrame}
-import org.apache.spark.sql.types.Metadata
+import org.apache.spark.sql.hyperspace.utils.logicalPlanToDataFrame
+import org.apache.spark.unsafe.types.UTF8String
+import org.opensearch.maximus.function.TumbleFunction
 
 case class MaximusCreateMVCommand(
     dbName: Option[String],
@@ -20,9 +17,13 @@ case class MaximusCreateMVCommand(
     queryString: String)
   extends RunnableCommand with Logging {
 
-  private val attributeMap = new util.HashMap[String, ExprId]()
+  // Hardcoding watermark delay for now
+  private val watermarkDelay = UTF8String.fromString("0 Minute")
 
+  /*
+  private val attributeMap = new util.HashMap[String, ExprId]()
   private val watermarkAttrMetadataMap = new util.HashMap[String, Metadata]()
+   */
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     log.info(s"Creating MV $mvName")
@@ -31,7 +32,6 @@ case class MaximusCreateMVCommand(
     val streamingDf = convertToStreaming(dataFrame)
     val streamingQuery =
       streamingDf
-        // .withWatermark("time", "10 minutes")
         .writeStream
         .format("delta")
         .outputMode("append")
@@ -44,6 +44,37 @@ case class MaximusCreateMVCommand(
     Seq.empty
   }
 
+  private def convertToStreaming(dataFrame: DataFrame): DataFrame = {
+    val streamingPlan = dataFrame.queryExecution.logical transform {
+
+      // Insert watermark operator between Aggregate and its child
+      case Aggregate(grouping, agg, child) =>
+        val timeCol = grouping.collect {
+          case UnresolvedFunction(identifier, args, _, _)
+            if identifier.funcName.toLowerCase() == TumbleFunction.identifier.funcName
+              => args.head
+        }
+
+        if (timeCol.isEmpty) {
+          throw new IllegalStateException(
+            "Windowing function is required for streaming aggregation")
+        }
+        Aggregate(grouping, agg,
+          EventTimeWatermark(
+            timeCol.head.asInstanceOf[Attribute],
+            IntervalUtils.stringToInterval(watermarkDelay),
+            child))
+
+      // Reset isStreaming flag in relation to true
+      case UnresolvedRelation(multipartIdentifier, options, _) =>
+        UnresolvedRelation(multipartIdentifier, options, isStreaming = true)
+    }
+
+    logicalPlanToDataFrame(dataFrame.sparkSession, streamingPlan)
+  }
+
+  // Unnecessary complicated logic because DataFrame can accept AST (parsed plan)
+  /*
   private def convertToStreaming(dataFrame: DataFrame): DataFrame = {
     val sparkSession = dataFrame.sparkSession
     val batchPlan = dataFrameToLogicalPlan(dataFrame)
@@ -132,4 +163,5 @@ case class MaximusCreateMVCommand(
         attribute
       }
   }
+  */
 }

@@ -21,10 +21,8 @@ import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.internal.SQLConf
+import org.opensearch.maximus.function.TumbleFunction
 import org.opensearch.maximus.parser.MaximusSqlParserExtension
-
-import com.microsoft.hyperspace.index.execution.BucketUnionStrategy
-import com.microsoft.hyperspace.index.rules.ApplyHyperspace
 
 /**
  * An extension for Spark SQL to activate Hyperspace.
@@ -67,6 +65,9 @@ class HyperspaceSparkSessionExtension extends (SparkSessionExtensions => Unit) {
       (sparkSession: SparkSession, parser: ParserInterface) => {
         new MaximusSqlParserExtension(new SQLConf, sparkSession)
       })
+
+    extensions.injectFunction(
+      (TumbleFunction.identifier, TumbleFunction.exprInfo, TumbleFunction.functionBuilder))
 
     extensions.injectOptimizerRule { sparkSession =>
       // Enable Hyperspace to leverage indexes.
