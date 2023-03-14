@@ -28,8 +28,7 @@ case class MaximusCreateMVCommand(
   override def run(sparkSession: SparkSession): Seq[Row] = {
     log.info(s"Creating MV $mvName")
 
-    val dataFrame = sparkSession.sql(queryString)
-    val streamingDf = convertToStreaming(dataFrame)
+    val streamingDf = buildStreamingJob(sparkSession)
     val streamingQuery =
       streamingDf
         .writeStream
@@ -44,7 +43,8 @@ case class MaximusCreateMVCommand(
     Seq.empty
   }
 
-  private def convertToStreaming(dataFrame: DataFrame): DataFrame = {
+  def buildStreamingJob(sparkSession: SparkSession): DataFrame = {
+    val dataFrame = sparkSession.sql(queryString)
     val streamingPlan = dataFrame.queryExecution.logical transform {
 
       // Insert watermark operator between Aggregate and its child

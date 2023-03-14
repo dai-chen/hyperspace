@@ -1,7 +1,10 @@
 package org.opensearch.maximus.parser
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.execution.ExplainMode
+import org.apache.spark.sql.execution.command.ExplainCommand
 import org.opensearch.maximus.command._
 import org.opensearch.maximus.command.mv._
 import scala.language.implicitConversions
@@ -9,14 +12,18 @@ import scala.util.matching.Regex
 import scala.util.parsing.combinator.PackratParsers
 import scala.util.parsing.combinator.syntactical.StandardTokenParsers
 
-class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
+class MaximusSqlParser(
+    sparkSession: SparkSession
+) extends StandardTokenParsers with PackratParsers {
 
   protected val AS = maximusKeyword("AS")
   protected val CREATE = maximusKeyword("CREATE")
   protected val DROP = maximusKeyword("DROP")
+  protected val EXPLAIN = maximusKeyword("EXPLAIN")
   protected val INDEX = maximusKeyword("INDEX")
   protected val INDEXES = maximusKeyword("INDEXES")
   protected val MATERIALIZED = maximusKeyword("MATERIALIZED")
+  protected val EXTENDED = maximusKeyword("EXTENDED")
   protected val ON = maximusKeyword("ON")
   protected val REFRESH = maximusKeyword("REFRESH")
   protected val SHOW = maximusKeyword("SHOW")
@@ -24,7 +31,8 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
   protected val VIEW = maximusKeyword("VIEW")
   protected val VIEWS = maximusKeyword("VIEWS")
 
-  protected lazy val root: Parser[LogicalPlan] = ddlCommand
+  protected lazy val root: Parser[LogicalPlan] =
+    ddlCommand | explainPlan
 
   protected lazy val ddlCommand: Parser[LogicalPlan] =
     indexCommands | mvCommands
@@ -106,6 +114,18 @@ class MaximusSqlParser extends StandardTokenParsers with PackratParsers {
       AS ~ query <~ opt(";") ^^ {
       case dbName ~ mvName ~ _ ~ query =>
         MaximusCreateMVCommand(dbName, mvName, query)
+    }
+
+  protected lazy val explainPlan: Parser[LogicalPlan] =
+    (EXPLAIN ~> opt(EXTENDED)) ~ root ^^ {
+      case modeStr ~ logicalPlan =>
+        val mode = ExplainMode.fromString(modeStr.getOrElse("simple")) // TODO: support other modes
+        val planToExplain = logicalPlan match {
+          case cmd: MaximusCreateMVCommand =>
+            cmd.buildStreamingJob(sparkSession).queryExecution.logical
+          case otherPlan => otherPlan
+        }
+        ExplainCommand(planToExplain, mode)
     }
 
   // Returns the rest of the input string that are not parsed yet

@@ -10,7 +10,7 @@ class MaximusSqlParserExtension(
     sparkSession: SparkSession)
   extends SparkSqlParser {
 
-  val parser = new MaximusSqlParser
+  val parser = new MaximusSqlParser(sparkSession)
 
   // var isRegistered = false
 
