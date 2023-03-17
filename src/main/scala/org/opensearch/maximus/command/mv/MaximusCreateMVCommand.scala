@@ -32,10 +32,13 @@ case class MaximusCreateMVCommand(
     val streamingQuery =
       streamingDf
         .writeStream
-        .format("delta")
+        .format("opensearch")
         .outputMode("append")
-        .option("checkpointLocation", "/tmp/delta/_checkpoints/") // Required and hardcoding for now
-        .toTable(mvName)
+        .option("checkpointLocation", "/tmp/delta/_checkpoints/") // Hardcoding for now
+        // .toTable(mvName)
+        .option("opensearch.resource", mvName)
+        .option("opensearch.spark.sql.streaming.sink.log.enabled", false)
+        .start()
 
     log.info("MV refreshing job started")
     streamingQuery.explain()
