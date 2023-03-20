@@ -7,6 +7,7 @@ import org.apache.spark.sql.execution.ExplainMode
 import org.apache.spark.sql.execution.command.ExplainCommand
 import org.opensearch.maximus.command._
 import org.opensearch.maximus.command.mv._
+import org.opensearch.maximus.command.task.MaximusShowTaskCommand
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.PackratParsers
@@ -28,11 +29,12 @@ class MaximusSqlParser(
   protected val REFRESH = maximusKeyword("REFRESH")
   protected val SHOW = maximusKeyword("SHOW")
   protected val TABLE = maximusKeyword("TABLE")
+  protected val TASKS = maximusKeyword("TASKS")
   protected val VIEW = maximusKeyword("VIEW")
   protected val VIEWS = maximusKeyword("VIEWS")
 
   protected lazy val root: Parser[LogicalPlan] =
-    ddlCommand | explainPlan
+    ddlCommand | explainPlan | taskCommands
 
   protected lazy val ddlCommand: Parser[LogicalPlan] =
     indexCommands | mvCommands
@@ -42,6 +44,9 @@ class MaximusSqlParser(
 
   protected lazy val mvCommands: Parser[LogicalPlan] =
     createMV
+
+  protected lazy val taskCommands: Parser[LogicalPlan] =
+    showTasks
 
   override val lexical = {
     val sqlLex = new MaximusSqlLexical
@@ -127,6 +132,9 @@ class MaximusSqlParser(
         }
         ExplainCommand(planToExplain, mode)
     }
+
+  protected lazy val showTasks: Parser[LogicalPlan] =
+    SHOW ~> TASKS <~ opt(";") ^^ (_ => MaximusShowTaskCommand())
 
   // Returns the rest of the input string that are not parsed yet
   private lazy val query: Parser[String] = new Parser[String] {
