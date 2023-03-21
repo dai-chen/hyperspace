@@ -18,7 +18,7 @@ package com.microsoft.hyperspace.index.sources.delta
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.delta.files.TahoeLogFileIndex
+import org.apache.spark.sql.delta.files.TahoeFileIndex
 import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, LogicalRelation}
 
 import com.microsoft.hyperspace.index.{IndexConstants, Relation}
@@ -47,7 +47,7 @@ class DeltaLakeFileBasedSource(private val spark: SparkSession) extends FileBase
    */
   def isSupportedRelation(plan: LogicalPlan): Option[Boolean] =
     plan match {
-      case LogicalRelation(HadoopFsRelation(_: TahoeLogFileIndex, _, _, _, _, _), _, _, _) =>
+      case LogicalRelation(HadoopFsRelation(_: TahoeFileIndex, _, _, _, _, _), _, _, _) =>
         Some(true)
       case _ => None
     }

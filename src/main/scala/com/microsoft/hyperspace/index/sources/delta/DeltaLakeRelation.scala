@@ -19,7 +19,7 @@ package com.microsoft.hyperspace.index.sources.delta
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
-import org.apache.spark.sql.delta.files.TahoeLogFileIndex
+import org.apache.spark.sql.delta.files.TahoeFileIndex
 import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, LogicalRelation}
 
 import com.microsoft.hyperspace.Hyperspace
@@ -39,7 +39,7 @@ class DeltaLakeRelation(spark: SparkSession, override val plan: LogicalRelation)
    */
   override def signature: String =
     plan.relation match {
-      case HadoopFsRelation(location: TahoeLogFileIndex, _, _, _, _, _) =>
+      case HadoopFsRelation(location: TahoeFileIndex, _, _, _, _, _) =>
         location.tableVersion + location.path.toString
     }
 
@@ -47,7 +47,7 @@ class DeltaLakeRelation(spark: SparkSession, override val plan: LogicalRelation)
    * All the files that the current relation references to.
    */
   lazy override val allFiles: Seq[FileStatus] = plan.relation match {
-    case HadoopFsRelation(location: TahoeLogFileIndex, _, _, _, _, _) =>
+    case HadoopFsRelation(location: TahoeFileIndex, _, _, _, _, _) =>
       DeltaLakeShims
         .getFiles(location)
         .map { f =>
@@ -60,7 +60,7 @@ class DeltaLakeRelation(spark: SparkSession, override val plan: LogicalRelation)
    */
   override def partitionBasePath: Option[String] =
     plan.relation match {
-      case HadoopFsRelation(t: TahoeLogFileIndex, _, _, _, _, _) if t.partitionSchema.nonEmpty =>
+      case HadoopFsRelation(t: TahoeFileIndex, _, _, _, _, _) if t.partitionSchema.nonEmpty =>
         Some(t.path.toString)
       case _ => None
     }
@@ -73,7 +73,7 @@ class DeltaLakeRelation(spark: SparkSession, override val plan: LogicalRelation)
    */
   override def createRelationMetadata(fileIdTracker: FileIdTracker): Relation = {
     plan.relation match {
-      case HadoopFsRelation(location: TahoeLogFileIndex, _, dataSchema, _, _, options) =>
+      case HadoopFsRelation(location: TahoeFileIndex, _, dataSchema, _, _, options) =>
         val files = DeltaLakeShims
           .getFiles(location)
           .map { f =>
@@ -207,7 +207,7 @@ class DeltaLakeRelation(spark: SparkSession, override val plan: LogicalRelation)
     }
 
     plan.relation match {
-      case HadoopFsRelation(location: TahoeLogFileIndex, _, _, _, _, _) =>
+      case HadoopFsRelation(location: TahoeFileIndex, _, _, _, _, _) =>
         // Find the largest index version whose delta table version is equal or less than
         // the given relation.
         val equalOrLessThanLastIndex = versions.lastIndexWhere(location.tableVersion >= _._2)

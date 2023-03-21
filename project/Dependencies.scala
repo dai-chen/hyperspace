@@ -41,7 +41,7 @@ object Dependencies {
            "org.apache.iceberg" % "iceberg-spark-runtime" % "0.11.0" % "provided" withSources ())
        else
          Seq(
-           "io.delta" %% "delta-core" % "0.8.0" % "provided" withSources (),
+           "io.delta" %% "delta-core" % "1.0.1" % "provided" withSources (),
            "org.apache.iceberg" % "iceberg-spark3-runtime" % "0.11.1" % "provided" withSources (),
            "org.apache.hive" % "hive-metastore" % "2.3.8" % "test"))
   }

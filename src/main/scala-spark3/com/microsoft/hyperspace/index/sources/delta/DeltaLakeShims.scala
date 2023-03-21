@@ -17,12 +17,19 @@
 package com.microsoft.hyperspace.index.sources.delta
 
 import org.apache.spark.sql.delta.actions.AddFile
-import org.apache.spark.sql.delta.files.TahoeLogFileIndex
+import org.apache.spark.sql.delta.files.{TahoeFileIndex, TahoeLogFileIndex}
+import org.apache.spark.sql.delta.stats.PreparedDeltaFileIndex
 
 object DeltaLakeShims {
-  def getFiles(location: TahoeLogFileIndex): Seq[AddFile] = {
-    location.getSnapshot
-      .filesForScan(projection = Nil, location.partitionFilters)
-      .files
+  def getFiles(location: TahoeFileIndex): Seq[AddFile] = location match {
+    case index: TahoeLogFileIndex =>
+      index
+        // .getSnapshot(stalenessAcceptable = false)
+        // .filesForScan(projection = Nil, index.partitionFilters, keepStats = false)
+        .getSnapshot
+        .filesForScan(projection = Nil, index.partitionFilters)
+        .files
+    case index: PreparedDeltaFileIndex =>
+      index.preparedScan.files
   }
 }
