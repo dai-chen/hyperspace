@@ -25,7 +25,7 @@ import com.microsoft.hyperspace.index.{IndexConstants, Relation}
 import com.microsoft.hyperspace.index.sources.{FileBasedRelation, FileBasedRelationMetadata, FileBasedSourceProvider, SourceProvider, SourceProviderBuilder}
 
 object DeltaLakeConstants {
-  val DELTA_FORMAT_STR = "delta"
+  val DELTA_FORMAT_STR = "maximus"
 
   // JSON property name used in index metadata to store Delta Lake version history of refresh.
   val DELTA_VERSION_HISTORY_PROPERTY = "deltaVersions"

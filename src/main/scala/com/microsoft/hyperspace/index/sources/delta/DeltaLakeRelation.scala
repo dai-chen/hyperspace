@@ -83,7 +83,7 @@ class DeltaLakeRelation(spark: SparkSession, override val plan: LogicalRelation)
         // fingerprinted by LogicalPlanFingerprint.
         val sourceDataProperties =
           Hdfs.Properties(Content.fromLeafFiles(files, fileIdTracker).get)
-        val fileFormatName = "delta"
+        val fileFormatName = "maximus"
 
         // Use case-sensitive map if the provided options are case insensitive.
         val caseSensitiveOptions = options match {
